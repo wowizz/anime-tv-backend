@@ -17,8 +17,8 @@ on:
 
 jobs:
   scrape:
-    runs-on: ubuntu-latest
-    timeout-minutes: 90  # Ditingkatkan karena Puppeteer lebih lama
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
     
     steps:
       - uses: actions/checkout@v4
@@ -27,45 +27,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
 
-      # TAMBAHAN: Install dependensi sistem untuk Puppeteer
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            libnss3 \
-            libatk-bridge2.0-0 \
-            libdrm2 \
-            libxkbcommon0 \
-            libgbm1 \
-            libasound2 \
-            libxshmfence1
-
-      - name: Install Node dependencies
+      - name: Install dependencies
         run: npm ci
 
-      # TAMBAHAN: Install Puppeteer Chromium secara terpisah (lebih kecil)
-      - name: Setup Puppeteer
-        run: npx puppeteer browsers install chrome@stable
-
-      - name: Full Scrape
-        if: github.event.inputs.mode == 'full' || github.event_name == 'schedule'
+      - name: Run Scraper
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: node scraper.js
-
-      - name: Fast Scrape
-        if: github.event.inputs.mode == 'fast'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: node scraper.js --catalog-only
-
-      - name: Debug Scrape
-        if: github.event.inputs.mode == 'debug'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-        run: node scraper.js --debug --limit=3
